@@ -3,9 +3,11 @@ package com.tadecather.coolweathercopy.util;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.google.gson.Gson;
 import com.tadecather.coolweathercopy.db.City;
 import com.tadecather.coolweathercopy.db.County;
 import com.tadecather.coolweathercopy.db.Province;
+import com.tadecather.coolweathercopy.gson.Weather;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -79,5 +81,21 @@ public class Utility {
             }
         }
         return false;
+    }
+
+
+    //处理天气返回信息
+
+    public static Weather handleWeatherRespone(String respone){
+        try{
+            JSONObject jsonObject = new JSONObject(respone);
+            JSONArray jsonArray = jsonObject.getJSONArray("HeWeather");
+            String weatherContent = jsonArray.getJSONObject(0).toString();
+            return new Gson().fromJson(weatherContent, Weather.class);
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        return null;
+
     }
 }

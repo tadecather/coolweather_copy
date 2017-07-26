@@ -3,6 +3,7 @@ package com.tadecather.coolweathercopy.util;
 import android.annotation.TargetApi;
 import android.app.Fragment;
 import android.app.ProgressDialog;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.util.Log;
@@ -16,6 +17,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.tadecather.coolweathercopy.MainActivity;
 import com.tadecather.coolweathercopy.R;
 import com.tadecather.coolweathercopy.db.City;
 import com.tadecather.coolweathercopy.db.County;
@@ -92,6 +94,12 @@ public class ChooseAreaFragment extends Fragment {
                 } else if(currentLevel == LEVEL_CITY){
                     selectedCity = cityList.get(posiotion);
                     queryCounties();
+                } else if(currentLevel == LEVEL_COUNTY){
+                    String weatherId = countyList.get(posiotion).getWeatherId();
+                    Intent intent = new Intent(getActivity(), MainActivity.class);
+                    intent.putExtra("weather_id", weatherId);
+                    startActivity(intent);
+                    getActivity().finish();
                 }
             }
 
@@ -247,12 +255,12 @@ public class ChooseAreaFragment extends Fragment {
             progressDialog.setMessage("正在加载...");
             progressDialog.setCanceledOnTouchOutside(false);
         }
-        progressDialog.show();
+//        progressDialog.show();
     }
 
     private void showProcessDialog() {
         if (progressDialog != null){
-            progressDialog.dismiss();
+//            progressDialog.dismiss();
         }
     }
 
