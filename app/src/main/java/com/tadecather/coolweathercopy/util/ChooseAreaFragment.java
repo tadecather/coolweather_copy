@@ -17,6 +17,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.tadecather.coolweathercopy.MainActivity;
 import com.tadecather.coolweathercopy.R;
 import com.tadecather.coolweathercopy.WeatherActivity;
 import com.tadecather.coolweathercopy.db.City;
@@ -95,18 +96,22 @@ public class ChooseAreaFragment extends Fragment {
                     selectedCity = cityList.get(posiotion);
                     queryCounties();
                 } else if(currentLevel == LEVEL_COUNTY){
-
-                    for(County county1 : countyList){
-                        Log.d(TAG, "onItemClick: " + county1.getWeatherId());
-                    }
-                    Log.d(TAG, "onItemClick: " + posiotion);
-
                     String weatherId = countyList.get(posiotion).getWeatherId();
-                    Intent intent = new Intent(getActivity(), WeatherActivity.class);
-                    intent.putExtra("weather_id", weatherId);
-                    startActivity(intent);
-                    Log.d(TAG, "onItemClick: " + weatherId);
-                    getActivity().finish();
+
+                    if(getActivity() instanceof MainActivity){
+                        Intent intent = new Intent(getActivity(), WeatherActivity.class);
+                        intent.putExtra("weather_id", weatherId);
+                        startActivity(intent);
+                        Log.d(TAG, "onItemClick: " + weatherId);
+                        getActivity().finish();
+                    } else if(getActivity() instanceof WeatherActivity){
+                        WeatherActivity activity = (WeatherActivity) getActivity();
+                        activity.drawerLayout.closeDrawers();
+                        activity.swipeRefresh.setRefreshing(true);
+                        activity.weatherId = weatherId;
+                        activity.requestWeather(weatherId);
+                    }
+
                 }
             }
 

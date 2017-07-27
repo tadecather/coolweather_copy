@@ -88,7 +88,6 @@ public class Utility {
 
     public static Weather handleWeatherRespone(String respone){
         try{
-            Log.d("TAG", "handleWeatherRespone: " + respone);
             JSONObject jsonObject = new JSONObject(respone);
             JSONArray jsonArray = jsonObject.getJSONArray("HeWeather");
             String weatherContent = jsonArray.getJSONObject(0).toString();
