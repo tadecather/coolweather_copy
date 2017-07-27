@@ -1,16 +1,22 @@
 package com.tadecather.coolweathercopy;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Color;
+import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.bumptech.glide.Glide;
 import com.tadecather.coolweathercopy.gson.Forecast;
 import com.tadecather.coolweathercopy.gson.Weather;
 import com.tadecather.coolweathercopy.util.HttpUtil;
@@ -24,6 +30,8 @@ import okhttp3.Response;
 
 public class WeatherActivity extends AppCompatActivity {
 
+
+    private static final String TAG = "WeatherActivity";
     private ScrollView weatherLayout;
 
     private TextView titleCity;
@@ -46,11 +54,23 @@ public class WeatherActivity extends AppCompatActivity {
 
     private TextView sportText;
 
+    private ImageView bingImg;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
 
+        if(Build.VERSION.SDK_INT >= 21){
+            View decorView = getWindow().getDecorView();
+            decorView.setSystemUiVisibility(
+                    View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+             );
+            getWindow().setStatusBarColor(Color.TRANSPARENT);
+        }
+
+        setContentView(R.layout.activity_weather);
+
+        bingImg = (ImageView) findViewById(R.id.bing_pic_img);
         weatherLayout = (ScrollView) findViewById(R.id.weather_layout);
         titleCity = (TextView) findViewById(R.id.title_city);
         titleUpdateTime = (TextView) findViewById(R.id.title_update_time);
@@ -63,28 +83,66 @@ public class WeatherActivity extends AppCompatActivity {
         carWashText = (TextView) findViewById(R.id.car_wash_text);
         sportText = (TextView) findViewById(R.id.sport_text);
 
-
         SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(this);
         String weatherString = pref.getString("weather", null);
+
+        String bingPic = pref.getString("bing_pic", null);
+
+        if(bingPic != null){
+            Glide.with(this).load(bingPic).into(bingImg);
+        } else{
+            loadBingPic();
+        }
+
+
         if(weatherString != null){
             Weather weather = Utility.handleWeatherRespone(weatherString);
             showWeatherInfo(weather);
         }else{
-            String weatherID = getIntent().getStringExtra("weather_id");
+            Intent intent = getIntent();
+            String weatherId = getIntent().getStringExtra("weather_id");
+            Log.d(TAG, "onItemClick: " + weatherId);
             weatherLayout.setVisibility(View.INVISIBLE);
-            requestWeather(weatherID);
+            requestWeather(weatherId);
         }
 
 
     }
 
-    private void requestWeather(final String weatherID) {
-        String weatherUrl = "http://guolin.tech/api/weather?cityid=" + weatherID + "&key=4493212a8913465ca14446b66d0befb3";
-        HttpUtil.sendOkHttpRequest(weatherUrl, new Callback() {
+    private void loadBingPic() {
+        String requestBingPic = "http://guolin.tech/api/bing_pic";
+        HttpUtil.sendOkHttpRequest(requestBingPic, new Callback() {
 
             @Override
             public void onResponse(Call call, Response response) throws IOException {
+                final String bingPic = response.body().string();
+                SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(WeatherActivity.this).edit();
+                editor.putString("bing_pic", bingPic);
+                editor.apply();
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Glide.with(WeatherActivity.this).load(bingPic).into(bingImg);
+                    }
+                });
+
+            }
+
+            @Override
+            public void onFailure(Call call, IOException e) {
+                e.printStackTrace();
+            }
+
+        });
+    }
+
+    private void requestWeather(final String weatherID) {
+        String weatherUrl = "http://guolin.tech/api/weather?cityid=" + weatherID + "&key=4493212a8913465ca14446b66d0befb3";
+        HttpUtil.sendOkHttpRequest(weatherUrl, new Callback() {
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
                 final String responseText = response.body().string();
+                Log.d(TAG, "onResponse: " + responseText);
                 final Weather weather = Utility.handleWeatherRespone(responseText);
                 runOnUiThread(new Runnable() {
                     @Override
@@ -98,6 +156,8 @@ public class WeatherActivity extends AppCompatActivity {
                     }
                 });
 
+                loadBingPic();
+
             }
 
             @Override
@@ -110,7 +170,7 @@ public class WeatherActivity extends AppCompatActivity {
     private void showWeatherInfo(Weather weather){
 
         String cityName = weather.basic.cityName;
-        String updateTime = weather.basic.update.updateTime;
+        String updateTime = weather.basic.update.updateTime.split(" ")[1];
         String degree = weather.now.temperature + "℃";
         String weatherInfo = weather.now.more.info;
         titleCity.setText(cityName);
@@ -125,7 +185,7 @@ public class WeatherActivity extends AppCompatActivity {
             TextView infoText = (TextView) view.findViewById(R.id.info_text);
             TextView maxText = (TextView) view.findViewById(R.id.max_text);
             TextView minText = (TextView) view.findViewById(R.id.min_text);
-            dateText.setText(forecast.data);
+            dateText.setText(forecast.date);
             infoText.setText(forecast.more.info);
             maxText.setText(forecast.temperature.max);
             minText.setText(forecast.temperature.min);
